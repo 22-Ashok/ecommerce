@@ -11,9 +11,13 @@
     "dev": "nodemon src/index.js"
   },
   "dependencies": {
+    "@aws-sdk/client-ses": "^3.1133.0",
+    "bcrypt": "^6.0.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "pg": "^8.23.0"
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.23.0",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

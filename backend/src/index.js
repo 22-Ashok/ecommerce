@@ -2,6 +2,7 @@
 const express = require("express");
 require("dotenv").config();
 const { pool, ensureSchema } = require("./db/pool");
+const authRoutes = require("./modules/auth/auth.routes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,6 +20,11 @@ app.get("/health", async (req, res) => {
     res.status(500).json({ status: "error", database: "disconnected", error: err.message });
   }
 });
+
+
+// routes 
+app.use("/auth", authRoutes);
+
 
 // Start server and initialize tables
 async function startServer() {
