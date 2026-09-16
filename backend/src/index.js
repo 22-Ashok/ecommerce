@@ -3,6 +3,7 @@ const express = require("express");
 require("dotenv").config();
 const { pool, ensureSchema } = require("./db/pool");
 const authRoutes = require("./modules/auth/auth.routes");
+const catalogRoutes = require("./modules/catalog/catalog.routes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,6 +25,7 @@ app.get("/health", async (req, res) => {
 
 // routes 
 app.use("/auth", authRoutes);
+app.use("/catalog", catalogRoutes);
 
 
 // Start server and initialize tables
