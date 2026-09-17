@@ -108,8 +108,8 @@ export default function Cart() {
         return;
       }
 
-      const options = {
-        key: razorpayData.keyId || "rzp_test_mockkey",
+       const options = {
+         key: import.meta.env.VITE_RAZORPAY_KEY_ID || razorpayData?.keyId || "rzp_test_mockkey",
         amount: razorpayData.amount,
         currency: razorpayData.currency || "INR",
         name: "NexusShop",
