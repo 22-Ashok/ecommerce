@@ -186,7 +186,7 @@ export default function Cart() {
                 <div className="space-y-1">
                   <h3 className="text-lg font-bold text-gray-900">{item.name}</h3>
                   <p className="text-sm text-gray-500">
-                    Price: ${Number(item.price).toFixed(2)} × {item.quantity}
+                    Price: {Number(item.price).toFixed(2)} × {item.quantity}
                   </p>
                   <span className="inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
                     Stock available: {item.available_stock}
@@ -197,7 +197,7 @@ export default function Cart() {
                   <div className="text-right">
                     <span className="text-xs text-gray-400 block">Subtotal</span>
                     <span className="text-lg font-extrabold text-indigo-600">
-                      ${Number(item.subtotal).toFixed(2)}
+                      {Number(item.subtotal).toFixed(2)}
                     </span>
                   </div>
                   <button
@@ -219,7 +219,7 @@ export default function Cart() {
             <div className="space-y-3">
               <div className="flex justify-between text-gray-600">
                 <span>Items ({cart.reduce((a, c) => a + c.quantity, 0)})</span>
-                <span>${totalAmount.toFixed(2)}</span>
+                <span>{totalAmount.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-gray-600">
                 <span>Shipping</span>
@@ -227,7 +227,7 @@ export default function Cart() {
               </div>
               <div className="border-t pt-3 flex justify-between text-lg font-extrabold text-gray-900">
                 <span>Total Amount</span>
-                <span className="text-indigo-600">${totalAmount.toFixed(2)}</span>
+                <span className="text-indigo-600">{totalAmount.toFixed(2)}</span>
               </div>
             </div>
 

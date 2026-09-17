@@ -93,7 +93,7 @@ export default function MyOrders() {
                   <div className="text-right">
                     <span className="text-xs text-gray-400 block">Total Amount</span>
                     <span className="text-lg font-extrabold text-gray-900">
-                      ${Number(order.total_amount).toFixed(2)}
+                      {Number(order.total_amount).toFixed(2)}
                     </span>
                   </div>
                   <span
@@ -124,7 +124,7 @@ export default function MyOrders() {
                     >
                       <span className="font-semibold text-gray-800">{item.name}</span>
                       <span className="text-gray-600">
-                        Qty: {item.quantity} × ${Number(item.price).toFixed(2)}
+                        Qty: {item.quantity} × {Number(item.price).toFixed(2)}
                       </span>
                     </div>
                   ))}
@@ -215,9 +215,9 @@ export default function MyOrders() {
                     <tr key={idx}>
                       <td className="p-3 font-medium text-gray-800">{item.name}</td>
                       <td className="p-3 text-center">{item.quantity}</td>
-                      <td className="p-3 text-right">${Number(item.price).toFixed(2)}</td>
+                      <td className="p-3 text-right">{Number(item.price).toFixed(2)}</td>
                       <td className="p-3 text-right font-bold text-indigo-600">
-                        ${(Number(item.price) * item.quantity).toFixed(2)}
+                        {(Number(item.price) * item.quantity).toFixed(2)}
                       </td>
                     </tr>
                   ))}
@@ -228,7 +228,7 @@ export default function MyOrders() {
             <div className="flex justify-between items-center border-t pt-4">
               <span className="text-base font-bold text-gray-800">Total Amount:</span>
               <span className="text-2xl font-extrabold text-indigo-600">
-                ${Number(invoiceData.order.total_amount).toFixed(2)}
+                {Number(invoiceData.order.total_amount).toFixed(2)}
               </span>
             </div>
 

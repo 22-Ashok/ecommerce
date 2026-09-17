@@ -58,7 +58,7 @@ export default function CheckoutSuccess() {
             </div>
             <div className="flex justify-between text-sm text-gray-600">
               <span>Total Amount:</span>
-              <span className="font-bold text-gray-900">${Number(orderDetails.total_amount).toFixed(2)}</span>
+              <span className="font-bold text-gray-900">{Number(orderDetails.total_amount).toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm text-gray-600">
               <span>Date:</span>

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, Package, LogOut, User, ShieldCheck } from "lucide-react";
+import { ShoppingCart, Package, LogOut, User, ShieldCheck, Settings } from "lucide-react";
 import { useAuthStore } from "../store/authStore";
 import { useCartStore } from "../store/cartStore";
 
@@ -50,6 +50,14 @@ export default function Navbar() {
                     {totalCartItems}
                   </span>
                 )}
+              </Link>
+
+              <Link
+                to="/settings"
+                className="p-2 text-gray-600 hover:text-indigo-600 transition-colors"
+                title="Account Settings"
+              >
+                <Settings className="h-6 w-6" />
               </Link>
 
               <div className="flex items-center space-x-3 border-l pl-6 border-gray-200">
