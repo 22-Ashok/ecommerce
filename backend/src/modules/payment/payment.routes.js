@@ -1,9 +1,56 @@
 const express = require('express');
 const crypto = require('crypto');
-const pool = require('../../db/pool'); // Verify path to your DB pool
+const { pool } = require('../../db/pool'); // Verify path to your DB pool
 const { publisher } = require('../../events/redisClient'); // Verify path to your Redis client
+const { razorpayInstance } = require('../../config/razorpay');
 
 const router = express.Router();
+
+// 1. POST /order/:orderId/initiate - Create or fetch Razorpay order synchronously for checkout
+router.post('/order/:orderId/initiate', async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        
+        const orderRes = await pool.query('SELECT total_amount, user_id FROM catalog.orders WHERE id = $1', [orderId]);
+        if (orderRes.rows.length === 0) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+        const { total_amount, user_id } = orderRes.rows[0];
+
+        let paymentRes = await pool.query('SELECT * FROM payment.payments WHERE order_id = $1', [orderId]);
+        let razorpayOrderId = paymentRes.rows.length > 0 ? paymentRes.rows[0].razorpay_order_id : null;
+
+        if (!razorpayOrderId) {
+            const currency = process.env.CURRENCY || 'USD';
+            const options = {
+                amount: Math.round(Number(total_amount) * 100),
+                currency: currency,
+                receipt: `receipt_order_${orderId}`
+            };
+            const razorpayOrder = await razorpayInstance.orders.create(options);
+            razorpayOrderId = razorpayOrder.id;
+
+            if (paymentRes.rows.length > 0) {
+                await pool.query('UPDATE payment.payments SET razorpay_order_id = $1 WHERE order_id = $2', [razorpayOrderId, orderId]);
+            } else {
+                await pool.query(
+                    'INSERT INTO payment.payments (order_id, user_id, amount, status, razorpay_order_id) VALUES ($1, $2, $3, $4, $5)',
+                    [orderId, user_id, total_amount, 'pending', razorpayOrderId]
+                );
+            }
+        }
+
+        res.status(200).json({
+            razorpayOrderId,
+            amount: Math.round(Number(total_amount) * 100),
+            currency: process.env.CURRENCY || 'USD',
+            keyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_mockkey'
+        });
+    } catch (err) {
+        console.error('[Payment Initiate] Error:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
 
 // 1. GET /order/:orderId - Frontend polling to check payment status
 router.get('/order/:orderId', async (req, res) => {

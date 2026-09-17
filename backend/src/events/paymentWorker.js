@@ -15,10 +15,11 @@ async function startPaymentWorker() {
                 const { orderId, userId, totalAmount } = payload;
                 console.log(`[Payment Worker] Received 'order.created' for Order ID: ${orderId}`);
 
-                // 1. Create order in Razorpay (amount in paise)
+                // 1. Create order in Razorpay (amount in smallest currency unit)
+                const currency = process.env.CURRENCY || 'USD';
                 const options = {
                     amount: Math.round(totalAmount * 100), 
-                    currency: 'INR',
+                    currency: currency,
                     receipt: `receipt_order_${orderId}`
                 };
                 const razorpayOrder = await razorpayInstance.orders.create(options);

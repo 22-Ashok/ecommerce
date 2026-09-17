@@ -84,10 +84,25 @@ async function ensureSchema() {
       user_id INT NOT NULL REFERENCES auth.users(id),
       amount NUMERIC(10, 2) NOT NULL,
       status VARCHAR(50) NOT NULL DEFAULT 'pending',
+      razorpay_order_id VARCHAR(255),
       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
       confirmed_at TIMESTAMP WITH TIME ZONE
     );
   `);
+
+  // Seed default products if empty
+  const productCountResult = await pool.query("SELECT COUNT(*) FROM catalog.products");
+  if (parseInt(productCountResult.rows[0].count) === 0) {
+    await pool.query(`
+      INSERT INTO catalog.products (name, description, price, stock) VALUES
+      ('Wireless Noise-Canceling Headphones', 'Immersive high-fidelity sound with 40-hour battery life and active noise cancellation.', 199.99, 25),
+      ('Mechanical RGB Gaming Keyboard', 'Tactile mechanical switches with customizable per-key RGB backlighting and aluminum chassis.', 129.99, 40),
+      ('Ultra-Wide 4K Gaming Monitor', '34-inch curved IPS display with 144Hz refresh rate and 1ms response time.', 599.99, 15),
+      ('Ergonomic Office Chair', 'Breathable mesh design with adjustable lumbar support and 4D armrests.', 249.99, 30),
+      ('Smart Fitness Watch', 'Heart rate tracking, GPS, sleep monitoring, and 5ATM water resistance.', 149.99, 50)
+    `);
+    console.log("Seeded default products into catalog.products.");
+  }
 }
 
 module.exports = { pool, ensureSchema };
