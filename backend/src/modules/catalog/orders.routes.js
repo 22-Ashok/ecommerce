@@ -1,6 +1,8 @@
 const express = require("express");
 const { pool } = require("../../db/pool");
 const requireAuth = require("../../middleware/requireAuth");
+const { publisher } = require("../../events/redisClient");
+const { ORDER_CREATED } = require("../../events/eventNames");
 
 const router = express.Router();
 
@@ -51,10 +53,22 @@ router.post("/", requireAuth, async (req, res) => {
     await client.query("DELETE FROM catalog.cart_items WHERE user_id = $1", [userId]);
     await client.query("COMMIT");
 
-    console.log(`[EVENT PUBLISHED]: order.created - Order ID: ${orderId}`);
+    // Publish the order.created event via Redis
+    await publisher.publish(
+      ORDER_CREATED,
+      JSON.stringify({
+        orderId,
+        userId,
+        totalAmount,
+        timestamp: new Date().toISOString(),
+      })
+    );
+
+    console.log(`[REDIS PUBLISHED]: ${ORDER_CREATED} - Order ID: ${orderId}`);
     return res.status(201).json({ message: "Order placed successfully", orderId });
   } catch (err) {
     await client.query("ROLLBACK");
+    console.error("Order Checkout Error:", err); // <-- Add this line
     return res.status(500).json({ error: err.message });
   } finally {
     client.release();
