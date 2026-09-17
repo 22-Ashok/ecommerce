@@ -8,14 +8,18 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "seed": "node src/db/seed.js"
   },
   "dependencies": {
     "@aws-sdk/client-ses": "^3.1133.0",
     "bcrypt": "^6.0.0",
+    "cloudinary": "^1.41.3",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "multer": "^2.4.0",
+    "multer-storage-cloudinary": "^4.0.0",
     "pg": "^8.23.0",
     "razorpay": "^2.9.8",
     "redis": "^6.2.1",
