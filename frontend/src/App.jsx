@@ -4,6 +4,7 @@ import Navbar from "./components/Navbar";
 import LoginSignup from "./pages/LoginSignup";
 import ProductList from "./pages/ProductList";
 import Cart from "./pages/Cart";
+import MyOrders from "./pages/MyOrders";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import { useAuthStore } from "./store/authStore";
 
@@ -29,6 +30,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <Cart />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders"
+              element={
+                <ProtectedRoute>
+                  <MyOrders />
                 </ProtectedRoute>
               }
             />

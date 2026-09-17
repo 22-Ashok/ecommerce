@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, Trash2, ArrowRight, ShoppingBag, AlertCircle } from "lucide-react";
+import { ShoppingCart, Trash2, ArrowRight, ShoppingBag, AlertCircle, MapPin, X, Plus } from "lucide-react";
 import { useCartStore } from "../store/cartStore";
 import api from "../services/api";
 
@@ -8,6 +8,24 @@ export default function Cart() {
   const { cart, loading, error, fetchCart, removeFromCart, checkout } = useCartStore();
   const navigate = useNavigate();
   const [paying, setPaying] = useState(false);
+
+  // Address modal state
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [addresses, setAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [addressError, setAddressError] = useState("");
+
+  const [formData, setFormData] = useState({
+    fullName: "",
+    phoneNumber: "",
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    country: "India",
+  });
 
   useEffect(() => {
     fetchCart();
@@ -29,35 +47,71 @@ export default function Cart() {
     });
   };
 
-  const handleCheckout = async () => {
+  const handleInitialCheckoutClick = async () => {
+    setAddressError("");
+    try {
+      const res = await api.get("/auth/address");
+      const list = res.data.addresses || [];
+      setAddresses(list);
+      if (list.length > 0) {
+        setSelectedAddressId(list[0].id);
+        setIsAddingNew(false);
+      } else {
+        setIsAddingNew(true);
+      }
+      setShowAddressModal(true);
+    } catch (err) {
+      setAddressError("Failed to fetch addresses. Please try again.");
+    }
+  };
+
+  const handleSaveNewAddress = async (e) => {
+    e.preventDefault();
+    setAddressError("");
+    try {
+      const res = await api.post("/auth/address", { ...formData, isDefault: true });
+      const newAddr = res.data.address;
+      setAddresses([newAddr, ...addresses]);
+      setSelectedAddressId(newAddr.id);
+      setIsAddingNew(false);
+    } catch (err) {
+      setAddressError(err.response?.data?.error || "Failed to save address");
+    }
+  };
+
+  const executeCheckoutWithAddress = async () => {
+    if (!selectedAddressId) {
+      setAddressError("Please select or add a shipping address to proceed.");
+      return;
+    }
+
+    setShowAddressModal(false);
+
     try {
       setPaying(true);
-      // 1. Create order in backend
       const orderId = await checkout();
 
-      // 2. Initiate payment and get Razorpay order ID
       let razorpayData = null;
       try {
-        const paymentRes = await api.post(`/payments/order/${orderId}/initiate`);
+        const paymentRes = await api.post(`/payments/order/${orderId}/initiate`, {
+          addressId: selectedAddressId,
+        });
         razorpayData = paymentRes.data;
       } catch (e) {
         console.warn("Could not initiate razorpay payment, proceeding with direct confirmation");
       }
 
-      // 3. Load Razorpay SDK
       const res = await loadRazorpayScript();
       if (!res || !razorpayData?.razorpayOrderId) {
-        // Fallback if razorpay script or order id is not available
         await api.post(`/payments/order/${orderId}/confirm`).catch(() => {});
         navigate(`/checkout/success?orderId=${orderId}`);
         return;
       }
 
-      // 4. Open Razorpay Checkout modal
       const options = {
         key: razorpayData.keyId || "rzp_test_mockkey",
         amount: razorpayData.amount,
-        currency: razorpayData.currency || "USD",
+        currency: razorpayData.currency || "INR",
         name: "NexusShop",
         description: `Order #${orderId}`,
         order_id: razorpayData.razorpayOrderId,
@@ -101,10 +155,10 @@ export default function Cart() {
         <span>Shopping Cart</span>
       </h1>
 
-      {error && (
+      {(error || addressError) && (
         <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center space-x-2">
           <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
-          <span>{error}</span>
+          <span>{error || addressError}</span>
         </div>
       )}
 
@@ -178,13 +232,173 @@ export default function Cart() {
             </div>
 
             <button
-              onClick={handleCheckout}
+              onClick={handleInitialCheckoutClick}
               disabled={loading || paying}
               className="w-full flex items-center justify-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 px-4 rounded-xl font-bold shadow-md transition-all disabled:opacity-50"
             >
-              <span>{paying ? "Opening Payment..." : "Proceed to Checkout"}</span>
+              <span>{paying ? "Processing..." : "Proceed to Checkout"}</span>
               <ArrowRight className="h-5 w-5" />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Shipping Address Modal */}
+      {showAddressModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-gray-100 space-y-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b pb-4">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
+                <MapPin className="h-6 w-6 text-indigo-600" />
+                <span>Select Shipping Address</span>
+              </h3>
+              <button
+                onClick={() => setShowAddressModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {addressError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl text-sm">
+                {addressError}
+              </div>
+            )}
+
+            {!isAddingNew && addresses.length > 0 ? (
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  {addresses.map((addr) => (
+                    <div
+                      key={addr.id}
+                      onClick={() => setSelectedAddressId(addr.id)}
+                      className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-start justify-between ${
+                        selectedAddressId === addr.id
+                          ? "border-indigo-600 bg-indigo-50/50 shadow-sm"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        <span className="font-bold text-gray-900 text-sm">{addr.full_name}</span>
+                        <p className="text-xs text-gray-600">
+                          {addr.address_line1}, {addr.city}, {addr.state} - {addr.postal_code}, {addr.country}
+                        </p>
+                        <p className="text-xs text-gray-500">Phone: {addr.phone_number}</p>
+                      </div>
+                      {selectedAddressId === addr.id && (
+                        <span className="bg-indigo-600 text-white text-xs px-2.5 py-1 rounded-full font-bold">
+                          Selected
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setIsAddingNew(true)}
+                  className="w-full py-3 border-2 border-dashed border-indigo-200 hover:border-indigo-600 text-indigo-600 rounded-2xl font-semibold text-sm flex items-center justify-center space-x-2 transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add New Address</span>
+                </button>
+
+                <button
+                  onClick={executeCheckoutWithAddress}
+                  disabled={paying}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 rounded-2xl font-bold shadow-md transition-all text-base"
+                >
+                  {paying ? "Processing Payment..." : "Deliver Here & Pay"}
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSaveNewAddress} className="space-y-4">
+                <h4 className="font-bold text-gray-800 text-sm">Enter Delivery Address</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    placeholder="Full Name"
+                    required
+                    value={formData.fullName}
+                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    className="p-3 bg-gray-50 border border-gray-300 rounded-xl text-sm"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Phone Number"
+                    required
+                    value={formData.phoneNumber}
+                    onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                    className="p-3 bg-gray-50 border border-gray-300 rounded-xl text-sm"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Address Line 1"
+                    required
+                    value={formData.addressLine1}
+                    onChange={(e) => setFormData({ ...formData, addressLine1: e.target.value })}
+                    className="sm:col-span-2 p-3 bg-gray-50 border border-gray-300 rounded-xl text-sm"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Address Line 2 (Optional)"
+                    value={formData.addressLine2}
+                    onChange={(e) => setFormData({ ...formData, addressLine2: e.target.value })}
+                    className="sm:col-span-2 p-3 bg-gray-50 border border-gray-300 rounded-xl text-sm"
+                  />
+                  <input
+                    type="text"
+                    placeholder="City"
+                    required
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    className="p-3 bg-gray-50 border border-gray-300 rounded-xl text-sm"
+                  />
+                  <input
+                    type="text"
+                    placeholder="State"
+                    required
+                    value={formData.state}
+                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                    className="p-3 bg-gray-50 border border-gray-300 rounded-xl text-sm"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Postal Code"
+                    required
+                    value={formData.postalCode}
+                    onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+                    className="p-3 bg-gray-50 border border-gray-300 rounded-xl text-sm"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Country"
+                    required
+                    value={formData.country}
+                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                    className="p-3 bg-gray-50 border border-gray-300 rounded-xl text-sm"
+                  />
+                </div>
+
+                <div className="flex space-x-3 pt-2">
+                  {addresses.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingNew(false)}
+                      className="w-1/3 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold text-sm"
+                    >
+                      Back
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-semibold shadow-md text-sm"
+                  >
+                    Save & Deliver Here
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

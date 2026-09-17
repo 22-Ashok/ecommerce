@@ -28,6 +28,11 @@ export default function Navbar() {
             <Link to="/" className="text-gray-600 hover:text-indigo-600 font-medium transition-colors">
               Products
             </Link>
+            {isAuthenticated && (
+              <Link to="/orders" className="text-gray-600 hover:text-indigo-600 font-medium transition-colors">
+                My Orders
+              </Link>
+            )}
           </nav>
         </div>
 

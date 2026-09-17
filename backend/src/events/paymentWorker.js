@@ -16,7 +16,7 @@ async function startPaymentWorker() {
                 console.log(`[Payment Worker] Received 'order.created' for Order ID: ${orderId}`);
 
                 // 1. Create order in Razorpay (amount in smallest currency unit)
-                const currency = process.env.CURRENCY || 'USD';
+                const currency = process.env.CURRENCY || 'INR';
                 const options = {
                     amount: Math.round(totalAmount * 100), 
                     currency: currency,
